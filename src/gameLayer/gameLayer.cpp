@@ -11,7 +11,11 @@
 #include <gl2d/gl2d.h>
 #include <platformTools.h>
 
+// My Includes
 #include <tileRenderer.h>
+#include <bullet.h>
+#include <vector>
+
 
 struct GameplayData
 {
@@ -26,9 +30,10 @@ gl2d::Renderer2D renderer;
 constexpr int BACKGROUNDS = 3;
 
 gl2d::Texture playerTexture;
-gl2d::Texture BK_spaceTexture;
-gl2d::Texture BK_starTexture;
-gl2d::Texture BK_planetTexture;
+gl2d::TextureAtlasPadding playersAtlas;
+
+gl2d::Texture spaceShipsTexture;
+gl2d::TextureAtlasPadding spaceShipsAtlas;
 
 
 #pragma endregion
@@ -43,7 +48,16 @@ bool initGame()
 	gl2d::init();
 	renderer.create();
 
-	playerTexture.loadFromFile(RESOURCES_PATH "spaceShip/ships/green.png", true);
+
+	playerTexture.loadFromFileWithPixelPadding
+	(RESOURCES_PATH "excessAssets/Player/PlayerShip.png", 128, true);
+	playersAtlas = gl2d::TextureAtlasPadding(12, 5, playerTexture.GetSize().x, playerTexture.GetSize().y);
+
+	spaceShipsTexture.loadFromFileWithPixelPadding
+	(RESOURCES_PATH "spaceShip/stitchedFiles/spaceships.png", 128, true);
+	spaceShipsAtlas = gl2d::TextureAtlasPadding(5, 2, spaceShipsTexture.GetSize().x, spaceShipsTexture.GetSize().y);
+
+
 	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
 	backgroundTexture[1].loadFromFile(RESOURCES_PATH "background/Stars.png", true);
 	backgroundTexture[2].loadFromFile(RESOURCES_PATH "background/Planets.png", true);
@@ -55,6 +69,8 @@ bool initGame()
 	tiledRenderer[0].paralaxStrength = 0;
 	tiledRenderer[1].paralaxStrength = 0.4;
 	tiledRenderer[2].paralaxStrength = 0.7;
+
+
 
 	
 	return true;
@@ -180,8 +196,9 @@ bool gameLogic(float deltaTime)
 
 	// Render Player
 	renderer.renderRectangle({ data.playerPos - glm::vec2(playerSpriteSize / 2,playerSpriteSize / 2)
-		, playerSpriteSize,playerSpriteSize }, playerTexture,
-		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f);
+		, playerSpriteSize, playerSpriteSize }, playerTexture,
+		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f,
+		playersAtlas.get(0, 0));
 
 #pragma endregion
 
