@@ -149,16 +149,15 @@ bool gameLogic(float deltaTime)
 
 #pragma region mousePos
 
-	// Player sprite size for determining rotation
-	float playerSpriteSize = 250;
-
+	
 	glm::vec2 mousePos = platform::getRelMousePosition();
 	glm::vec2 screenCenter(w / 2.f, h / 2.f);
 
+	// Updated: Player is now rendered in center so the mouse is also centered.
 	// Center offset for determining rotation
-	glm::vec2 centerOffset(playerSpriteSize/4, playerSpriteSize/4); // Quarter of the player sprite size
+	//glm::vec2 centerOffset(playerSpriteSize/4, playerSpriteSize/4); // Quarter of the player sprite size
 
-	glm::vec2 mouseDirection = mousePos - screenCenter - centerOffset;
+	glm::vec2 mouseDirection = mousePos - screenCenter;
 
 	if (glm::length(mouseDirection) == 0.f)
 	{
@@ -176,9 +175,12 @@ bool gameLogic(float deltaTime)
 #pragma region renderShips
 	
 	
+	// Player sprite size for determining rendering
+	constexpr float playerSpriteSize = 250.f;
 
 	// Render Player
-	renderer.renderRectangle({ data.playerPos, playerSpriteSize, playerSpriteSize }, playerTexture,
+	renderer.renderRectangle({ data.playerPos - glm::vec2(playerSpriteSize / 2,playerSpriteSize / 2)
+		, playerSpriteSize,playerSpriteSize }, playerTexture,
 		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f);
 
 #pragma endregion
