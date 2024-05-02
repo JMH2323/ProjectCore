@@ -247,7 +247,7 @@ bool gameLogic(float deltaTime)
 	for (int i = 0; i < data.bullets.size(); i++)
 	{
 
-		if (glm::distance(data.bullets[i].position, data.playerPos) > 5'000)
+		if (glm::distance(data.bullets[i].position, data.playerPos) > 2000)
 		{
 			data.bullets.erase(data.bullets.begin() + i);
 			i--;
