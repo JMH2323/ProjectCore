@@ -23,6 +23,10 @@ GameplayData data;
 gl2d::Renderer2D renderer;
 
 gl2d::Texture playerTexture;
+gl2d::Texture BK_spaceTexture;
+gl2d::Texture BK_starTexture;
+gl2d::Texture BK_planetTexture;
+
 
 #pragma endregion
 
@@ -33,6 +37,11 @@ bool initGame()
 	renderer.create();
 
 	playerTexture.loadFromFile(RESOURCES_PATH "spaceShip/ships/green.png", true);
+	BK_spaceTexture.loadFromFile(RESOURCES_PATH "background/Space.png", true);
+	BK_starTexture.loadFromFile(RESOURCES_PATH "background/Stars.png", true);
+	BK_planetTexture.loadFromFile(RESOURCES_PATH "background/Planets.png", true);
+
+
 	
 	return true;
 }
@@ -96,15 +105,33 @@ bool gameLogic(float deltaTime)
 	if (move.x != 0 || move.y != 0)
 	{
 		move = glm::normalize(move);
-		move *= deltaTime * 200; // 200 pixels per second
+		move *= deltaTime * 500; // 500 pixels per second
 		data.playerPos += move;
 	}
 
 
 #pragma endregion
 
+#pragma region renderBackground
 
+	
+
+	renderer.renderRectangle({ 0,0,10000,10000 }, BK_spaceTexture);
+
+
+#pragma endregion
+
+
+	// Camera Follow
+	renderer.currentCamera.follow(data.playerPos, deltaTime * 450, 10, 50, w, h);
+
+#pragma region renderShips
+
+	// Render Player
 	renderer.renderRectangle({ data.playerPos, 200, 200 }, playerTexture);
+
+#pragma endregion
+	
 
 
 	renderer.flush();
