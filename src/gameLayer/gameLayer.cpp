@@ -15,6 +15,7 @@
 #include <tileRenderer.h>
 #include <bullet.h>
 #include <vector>
+#include <enemy.h>
 
 
 struct GameplayData
@@ -22,8 +23,9 @@ struct GameplayData
 	// Player Position
 	glm::vec2 playerPos = { 100,100 };
 
-	// Keep track of Bullets
+	// Keep track of Bullets, Enemies
 	std::vector<Bullet> bullets;
+	std::vector<Enemy> enemies;
 	
 
 };
@@ -156,9 +158,6 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
-
-
-
 #pragma region Camerafollow
 
 	// Camera Follow
@@ -205,7 +204,6 @@ bool gameLogic(float deltaTime)
 	float spaceShipAngle = atan2(mouseDirection.y, -mouseDirection.x);
 
 #pragma endregion
-
 
 #pragma region handleBulets
 
@@ -260,18 +258,35 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+#pragma region handleEnemies
+
+	for (int i = 0; i < data.enemies.size(); i++)
+	{
+		// TODO: update enemies
+	}
+
+#pragma endregion
+
+#pragma region renderEnemies
+
+	for (auto& e : data.enemies)
+	{
+		e.render(renderer, spaceShipsTexture, spaceShipsAtlas);
+	}
+
+#pragma endregion
 
 #pragma region renderShips
 	
 	
 	// Player sprite size for determining rendering
-	constexpr float playerSpriteSize = 250.f;
+	constexpr float shipSize = 250.f;
 
-	// Render Player
-	renderer.renderRectangle({ data.playerPos - glm::vec2(playerSpriteSize / 2,playerSpriteSize / 2)
-		, playerSpriteSize, playerSpriteSize }, playerTexture,
-		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f,
-		playersAtlas.get(0, 0));
+
+	// Render Player 
+	renderSpaceShip(renderer, data.playerPos, shipSize,
+		playerTexture, playersAtlas.get(0, 0), mouseDirection);
+
 
 #pragma endregion
 
@@ -294,6 +309,14 @@ bool gameLogic(float deltaTime)
 	ImGui::Begin("debug");
 
 	ImGui::Text("Bullet count: %d", (int)data.bullets.size());
+	ImGui::Text("Enemies count: %d", (int)data.enemies.size());
+
+	if (ImGui::Button("Spawn enemy"))
+	{
+		Enemy e;
+		e.position = data.playerPos;
+		data.enemies.push_back(e);
+	}
 
 	ImGui::End();
 
