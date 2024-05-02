@@ -36,7 +36,11 @@ struct GameplayData
 	float shipSize = 250.f;
 
 	// Enemy Spawn
-	float enemySpawnRate = 1.5;
+	float enemySpawnRate = 3.f;
+	int enemySpawnMod = 3;
+
+	float score = 0;
+
 };
 
 GameplayData data;
@@ -61,7 +65,10 @@ TiledRenderer tiledRenderer[BACKGROUNDS];
 gl2d::Texture healthBar;
 gl2d::Texture health;
 
-
+Sound shootSound1;
+Sound shootSound2;
+Sound shootSound3;
+Sound gameplaySound;
 
 #pragma endregion
 
@@ -73,6 +80,8 @@ void restartGame()
 	data = {};
 	renderer.currentCamera.follow(data.playerPos
 		, 550, 0, 0, renderer.windowW, renderer.windowH);
+
+	PlaySound(gameplaySound);
 }
 
 bool bulletCollision(glm::vec2 bulletPos, glm::vec2 shipPos, float shipSize)
@@ -138,6 +147,16 @@ bool initGame()
 	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
 	backgroundTexture[1].loadFromFile(RESOURCES_PATH "background/Stars.png", true);
 	backgroundTexture[2].loadFromFile(RESOURCES_PATH "background/Planets.png", true);
+
+	shootSound1 = LoadSound(RESOURCES_PATH "arcade_shot1.wav");
+	SetSoundVolume(shootSound1, 0.8);
+	shootSound2 = LoadSound(RESOURCES_PATH "arcade_shot2.wav");
+	SetSoundVolume(shootSound2, 0.8);
+	shootSound3 = LoadSound(RESOURCES_PATH "arcade_shot3.wav");
+	SetSoundVolume(shootSound3, 0.5);
+	gameplaySound = LoadSound(RESOURCES_PATH "Battle in the Stars.ogg");
+	SetSoundVolume(gameplaySound, 0.10);
+	
 
 	tiledRenderer[0].texture = backgroundTexture[0];
 	tiledRenderer[1].texture = backgroundTexture[1];
@@ -297,7 +316,8 @@ bool gameLogic(float deltaTime)
 		data.bullets.push_back(b1);
 		data.bullets.push_back(b2);
 
-
+		if (rand() % 2 == 0) PlaySound(shootSound1);
+		else PlaySound(shootSound2);
 
 	}
 
@@ -313,7 +333,7 @@ bool gameLogic(float deltaTime)
 
 		if (data.enemySpawnRate < 0)
 		{
-			data.enemySpawnRate = rand() % 6 + 1;
+			data.enemySpawnRate = rand() % data.enemySpawnMod + 1;
 
 			spawnEnemy();
 			if (rand() % 3 == 0)
@@ -347,6 +367,8 @@ bool gameLogic(float deltaTime)
 			b.bulletSize = 50;
 			//todo speed
 			data.bullets.push_back(b);
+
+			PlaySound(shootSound3);
 		}
 	}
 
@@ -381,8 +403,10 @@ bool gameLogic(float deltaTime)
 					// Check enemy health.
 					if (data.enemies[e].life <= 0)
 					{
-						// Kill enemy
+						// Kill enemy and reward player
 						data.enemies.erase(data.enemies.begin() + e);
+						data.score += 10;
+						data.playerHealth += .1f;
 					}
 
 					// Consume bullet
@@ -513,6 +537,8 @@ bool gameLogic(float deltaTime)
 	{
 		restartGame();
 	}
+
+	ImGui::SliderInt("Spawn Rate (Lower means faster)", &data.enemySpawnMod, 1, 10);
 
 	ImGui::SliderFloat("Player Health", &data.playerHealth, 0, 1);
 

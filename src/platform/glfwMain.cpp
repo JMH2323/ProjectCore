@@ -368,9 +368,9 @@ int main()
 #pragma endregion
 
 #pragma region audio
-	//InitAudioDevice();
+	InitAudioDevice();
 
-	//Music m = LoadMusicStream(RESOURCES_PATH "target.ogg");
+	//Music m = LoadMusicStream(RESOURCES_PATH "Battle in the Stars.ogg");
 	//Music m = {};
 	//UpdateMusicStream(m);
 	//StopMusicStream(m);
