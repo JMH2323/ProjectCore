@@ -210,7 +210,7 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
-#pragma region handleBulets
+#pragma region handlePlayerBulets
 
 
 	if (platform::isLMousePressed())
@@ -232,11 +232,11 @@ bool gameLogic(float deltaTime)
 
 		// Create bullets at position, with offset and direction.
 		b1.position = data.playerPos + rotatedGunOffset;
-		b1.bulletSpeed = 2500.f;
+		b1.bulletSpeed = 3000.f;
 		b1.fireDirection = mouseDirection;
 		// Second bullet has negative offset
 		b2.position = data.playerPos - rotatedGunOffset;
-		b2.bulletSpeed = 2500.f;
+		b2.bulletSpeed = 3000.f;
 		b2.fireDirection = mouseDirection;
 
 		data.bullets.push_back(b1);
@@ -267,7 +267,25 @@ bool gameLogic(float deltaTime)
 
 	for (int i = 0; i < data.enemies.size(); i++)
 	{
-		data.enemies[i].update(deltaTime, data.playerPos);
+		// If the enemy is too far away, despawn them
+		if (glm::distance(data.playerPos, data.enemies[i].position) > 4000.f)
+		{
+			//despawn enemy
+			data.enemies.erase(data.enemies.begin() + i);
+			i--;
+			continue;
+		}
+
+		if (data.enemies[i].update(deltaTime, data.playerPos))
+		{
+			Bullet b;
+			b.position = data.enemies[i].position;
+			b.fireDirection = data.enemies[i].viewDirection;
+			b.isEnemy = true;
+			b.bulletSize = 50;
+			//todo speed
+			data.bullets.push_back(b);
+		}
 	}
 
 #pragma endregion
@@ -324,9 +342,13 @@ bool gameLogic(float deltaTime)
 		Enemy e;
 		e.position = data.playerPos;
 
-		e.speed = 700 + rand() % 1000;
-		e.turnSpeed = 2.f + (rand() & 1000) / 500.f;
+		e.speed = 800.f + rand() % 1000;
+		e.turnSpeed = 2.2 + (rand() & 1000) / 500.f;
 		e.type = shipTypes[rand() % 4];
+		e.fireRange = 1.5 + (rand() % 1000) / 2000.f;
+		e.fireTimeReset = 0.1 + (rand() % 1000) / 500;
+
+		// TODO bullet speed
 
 		data.enemies.push_back(e);
 	}
