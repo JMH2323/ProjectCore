@@ -31,7 +31,8 @@ struct GameplayData
 
 	float playerHealth = 1.f;
 	
-
+	// Player sprite size for determining rendering
+	float shipSize = 250.f;
 };
 
 GameplayData data;
@@ -66,6 +67,11 @@ void restartGame()
 	data = {};
 	renderer.currentCamera.follow(data.playerPos
 		, 550, 0, 0, renderer.windowW, renderer.windowH);
+}
+
+bool bulletCollision(glm::vec2 bulletPos, glm::vec2 shipPos, float shipSize)
+{
+	return glm::distance(bulletPos, shipPos) <= shipSize;
 }
 
 bool initGame()
@@ -228,7 +234,7 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
-#pragma region handlePlayerBulets
+#pragma region handlePlayerBullets
 
 
 	if (platform::isLMousePressed())
@@ -264,21 +270,6 @@ bool gameLogic(float deltaTime)
 
 	}
 
-
-	for (int i = 0; i < data.bullets.size(); i++)
-	{
-
-		if (glm::distance(data.bullets[i].position, data.playerPos) > 2000)
-		{
-			data.bullets.erase(data.bullets.begin() + i);
-			i--;
-			continue;
-		}
-
-		data.bullets[i].update(deltaTime);
-
-	}
-
 #pragma endregion
 
 #pragma region handleEnemies
@@ -308,6 +299,90 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+#pragma region handleBullets
+
+
+	// For all bullets
+	for (int i = 0; i < data.bullets.size(); i++)
+	{
+		// Despawn if too far
+		if (glm::distance(data.bullets[i].position, data.playerPos) > 2000)
+		{
+			data.bullets.erase(data.bullets.begin() + i);
+			i--;
+			continue;
+		}
+
+		// If it is the player's bullet
+		if (!data.bullets[i].isEnemy)
+		{
+			
+			bool breakBothLoops = false;
+			for (int e = 0; e < data.enemies.size(); e++)
+			{
+				// Check for collision with enemy. If hits, deal damage.
+				if (bulletCollision(data.bullets[i].position, data.enemies[e].position, enemyShipSize))
+				{
+					data.enemies[e].life -= 0.1;
+
+					// Check enemy health.
+					if (data.enemies[e].life <= 0)
+					{
+						// Kill enemy
+						data.enemies.erase(data.enemies.begin() + e);
+					}
+
+					// Consume bullet
+					data.bullets.erase(data.bullets.begin() + i);
+					i--;
+					breakBothLoops = true;
+					continue;
+
+				}
+			}
+			if (breakBothLoops)
+			{
+				continue;
+			}
+		}
+
+		// If it is an enemy bullet
+		else 
+		{
+			// Check for collision with player. If hits, deal damage.
+			if (bulletCollision(data.bullets[i].position, data.playerPos, data.shipSize))
+			{
+				
+				data.playerHealth -= 0.1;
+
+				// Consume bullet
+				
+				data.bullets.erase(data.bullets.begin() + i);
+				i--;
+				continue;
+			}
+		}
+
+		// If no collision, update
+		data.bullets[i].update(deltaTime);
+	}
+
+	// Check player health
+	if (data.playerHealth <= 0)
+	{
+		restartGame();
+	}
+	else
+	{
+		// Regenerate health
+		data.playerHealth += deltaTime * 0.01;
+		data.playerHealth = glm::clamp(data.playerHealth, 0.f, 1.f);
+	}
+
+	
+
+#pragma endregion
+
 #pragma region renderEnemies
 
 	for (auto& e : data.enemies)
@@ -320,12 +395,11 @@ bool gameLogic(float deltaTime)
 #pragma region renderShips
 	
 	
-	// Player sprite size for determining rendering
-	constexpr float shipSize = 250.f;
+	
 
 
 	// Render Player 
-	renderSpaceShip(renderer, data.playerPos, shipSize,
+	renderSpaceShip(renderer, data.playerPos, data.shipSize,
 		playerTexture, playersAtlas.get(0, 0), mouseDirection);
 
 
