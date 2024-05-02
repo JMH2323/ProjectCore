@@ -11,6 +11,8 @@
 #include <gl2d/gl2d.h>
 #include <platformTools.h>
 
+#include <tileRenderer.h>
+
 struct GameplayData
 {
 	glm::vec2 playerPos = { 100,100 };
@@ -30,6 +32,9 @@ gl2d::Texture BK_planetTexture;
 
 #pragma endregion
 
+TiledRenderer tiledRenderer;
+
+
 bool initGame()
 {
 	//initializing stuff for the renderer
@@ -41,6 +46,7 @@ bool initGame()
 	BK_starTexture.loadFromFile(RESOURCES_PATH "background/Stars.png", true);
 	BK_planetTexture.loadFromFile(RESOURCES_PATH "background/Planets.png", true);
 
+	tiledRenderer.texture = BK_spaceTexture;
 
 	
 	return true;
@@ -105,7 +111,7 @@ bool gameLogic(float deltaTime)
 	if (move.x != 0 || move.y != 0)
 	{
 		move = glm::normalize(move);
-		move *= deltaTime * 500; // 500 pixels per second
+		move *= deltaTime * 1000; // 1000 pixels per second
 		data.playerPos += move;
 	}
 
@@ -114,9 +120,9 @@ bool gameLogic(float deltaTime)
 
 #pragma region renderBackground
 
-	
+	renderer.currentCamera.zoom = 0.5;
 
-	renderer.renderRectangle({ 0,0,10000,10000 }, BK_spaceTexture);
+	tiledRenderer.render(renderer);
 
 
 #pragma endregion
