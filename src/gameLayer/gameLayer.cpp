@@ -52,6 +52,10 @@ bool initGame()
 	tiledRenderer[1].texture = backgroundTexture[1];
 	tiledRenderer[2].texture = backgroundTexture[2];
 
+	tiledRenderer[0].paralaxStrength = 0;
+	tiledRenderer[1].paralaxStrength = 0.4;
+	tiledRenderer[2].paralaxStrength = 0.7;
+
 	
 	return true;
 }
@@ -60,7 +64,7 @@ bool initGame()
 
 bool gameLogic(float deltaTime)
 {
-#pragma region init stuff
+#pragma region initView
 	int w = 0; int h = 0;
 	w = platform::getFrameBufferSizeX(); //window w
 	h = platform::getFrameBufferSizeY(); //window h
@@ -70,7 +74,6 @@ bool gameLogic(float deltaTime)
 
 	renderer.updateWindowMetrics(w, h);
 #pragma endregion
-
 
 #pragma region movement
 
@@ -115,10 +118,17 @@ bool gameLogic(float deltaTime)
 	if (move.x != 0 || move.y != 0)
 	{
 		move = glm::normalize(move);
-		move *= deltaTime * 1000; // 1000 pixels per second
+		move *= deltaTime * 1500; // 1500 pixels per second
 		data.playerPos += move;
 	}
 
+
+#pragma endregion
+
+#pragma region Camerafollow
+
+	// Camera Follow
+	renderer.currentCamera.follow(data.playerPos, deltaTime * 1450, 1, 50, w, h);
 
 #pragma endregion
 
@@ -137,19 +147,44 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+#pragma region mousePos
 
-	// Camera Follow
-	renderer.currentCamera.follow(data.playerPos, deltaTime * 450, 10, 50, w, h);
+	// Player sprite size for determining rotation
+	float playerSpriteSize = 250;
 
-#pragma region renderShips
+	glm::vec2 mousePos = platform::getRelMousePosition();
+	glm::vec2 screenCenter(w / 2.f, h / 2.f);
 
-	// Render Player
-	renderer.renderRectangle({ data.playerPos, 200, 200 }, playerTexture);
+	// Center offset for determining rotation
+	glm::vec2 centerOffset(playerSpriteSize/4, playerSpriteSize/4); // Quarter of the player sprite size
+
+	glm::vec2 mouseDirection = mousePos - screenCenter - centerOffset;
+
+	if (glm::length(mouseDirection) == 0.f)
+	{
+		mouseDirection = { 1,0 };
+	}
+	else
+	{
+		mouseDirection = normalize(mouseDirection);
+	}
+
+	float spaceShipAngle = atan2(mouseDirection.y, -mouseDirection.x);
 
 #pragma endregion
+
+#pragma region renderShips
+	
 	
 
+	// Render Player
+	renderer.renderRectangle({ data.playerPos, playerSpriteSize, playerSpriteSize }, playerTexture,
+		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f);
 
+#pragma endregion
+
+
+	// flush the renderer clean
 	renderer.flush();
 
 
