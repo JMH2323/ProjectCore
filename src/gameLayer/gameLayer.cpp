@@ -19,7 +19,13 @@
 
 struct GameplayData
 {
+	// Player Position
 	glm::vec2 playerPos = { 100,100 };
+
+	// Keep track of Bullets
+	std::vector<Bullet> bullets;
+	
+
 };
 
 GameplayData data;
@@ -31,6 +37,9 @@ constexpr int BACKGROUNDS = 3;
 
 gl2d::Texture playerTexture;
 gl2d::TextureAtlasPadding playersAtlas;
+
+gl2d::Texture bulletsTexture;
+gl2d::TextureAtlasPadding bulletsAtlas;
 
 gl2d::Texture spaceShipsTexture;
 gl2d::TextureAtlasPadding spaceShipsAtlas;
@@ -44,20 +53,26 @@ TiledRenderer tiledRenderer[BACKGROUNDS];
 
 bool initGame()
 {
-	//initializing stuff for the renderer
+	// Initializing for the renderer
 	gl2d::init();
 	renderer.create();
 
-
+	// Player Text/Pad
 	playerTexture.loadFromFileWithPixelPadding
 	(RESOURCES_PATH "excessAssets/Player/PlayerShip.png", 128, true);
 	playersAtlas = gl2d::TextureAtlasPadding(12, 5, playerTexture.GetSize().x, playerTexture.GetSize().y);
 
+	// Bullets Text/Pad
+	bulletsTexture.loadFromFileWithPixelPadding
+	(RESOURCES_PATH "spaceShip/stitchedFiles/projectiles.png", 500, true);
+	bulletsAtlas = gl2d::TextureAtlasPadding(3, 2, bulletsTexture.GetSize().x, bulletsTexture.GetSize().y);
+
+	// Enemy Text/Pad
 	spaceShipsTexture.loadFromFileWithPixelPadding
 	(RESOURCES_PATH "spaceShip/stitchedFiles/spaceships.png", 128, true);
 	spaceShipsAtlas = gl2d::TextureAtlasPadding(5, 2, spaceShipsTexture.GetSize().x, spaceShipsTexture.GetSize().y);
 
-
+	// Background
 	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
 	backgroundTexture[1].loadFromFile(RESOURCES_PATH "background/Stars.png", true);
 	backgroundTexture[2].loadFromFile(RESOURCES_PATH "background/Planets.png", true);
@@ -141,6 +156,9 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+
+
+
 #pragma region Camerafollow
 
 	// Camera Follow
@@ -188,6 +206,61 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+
+#pragma region handleBulets
+
+
+	if (platform::isLMousePressed())
+	{
+		Bullet b1;
+		Bullet b2;
+
+		float spriteWidth = 250;
+
+		// Coordinates of the gun barrel's exit point, relative to the player's center (a quarter from center)
+		glm::vec2 gunOffset = glm::vec2(0, spriteWidth / 4);
+
+		// Rotate the offset according to the sprite's rotation
+		float s = sin(spaceShipAngle);
+		float c = cos(spaceShipAngle);
+		glm::vec2 rotatedGunOffset;
+		rotatedGunOffset.x = gunOffset.x * c + gunOffset.y * s;
+		rotatedGunOffset.y = -gunOffset.x * s + gunOffset.y * c;
+
+		// Create bullets at position, with offset and direction.
+		b1.position = data.playerPos + rotatedGunOffset;
+		b1.bulletSpeed = 2500.f;
+		b1.fireDirection = mouseDirection;
+		// Second bullet has negative offset
+		b2.position = data.playerPos - rotatedGunOffset;
+		b2.bulletSpeed = 2500.f;
+		b2.fireDirection = mouseDirection;
+
+		data.bullets.push_back(b1);
+		data.bullets.push_back(b2);
+
+
+
+	}
+
+
+	for (int i = 0; i < data.bullets.size(); i++)
+	{
+
+		if (glm::distance(data.bullets[i].position, data.playerPos) > 5'000)
+		{
+			data.bullets.erase(data.bullets.begin() + i);
+			i--;
+			continue;
+		}
+
+		data.bullets[i].update(deltaTime);
+
+	}
+
+#pragma endregion
+
+
 #pragma region renderShips
 	
 	
@@ -199,6 +272,15 @@ bool gameLogic(float deltaTime)
 		, playerSpriteSize, playerSpriteSize }, playerTexture,
 		Colors_White, {}, glm::degrees(spaceShipAngle) + 90.f,
 		playersAtlas.get(0, 0));
+
+#pragma endregion
+
+#pragma region render bullets
+
+	for (auto& b : data.bullets)
+	{
+		b.render(renderer, bulletsTexture, bulletsAtlas);
+	}
 
 #pragma endregion
 
