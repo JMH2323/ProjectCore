@@ -17,6 +17,7 @@
 #include <vector>
 #include <enemy.h>
 #include <cstdio>
+#include <glui/glui.h>
 
 
 struct GameplayData
@@ -27,6 +28,8 @@ struct GameplayData
 	// Keep track of Bullets, Enemies
 	std::vector<Bullet> bullets;
 	std::vector<Enemy> enemies;
+
+	float playerHealth = 1.f;
 	
 
 };
@@ -47,11 +50,15 @@ gl2d::TextureAtlasPadding bulletsAtlas;
 gl2d::Texture spaceShipsTexture;
 gl2d::TextureAtlasPadding spaceShipsAtlas;
 
+gl2d::Texture backgroundTexture[BACKGROUNDS];
+TiledRenderer tiledRenderer[BACKGROUNDS];
+
+gl2d::Texture healthBar;
+gl2d::Texture health;
 
 #pragma endregion
 
-gl2d::Texture backgroundTexture[BACKGROUNDS];
-TiledRenderer tiledRenderer[BACKGROUNDS];
+
 
 
 void restartGame()
@@ -85,6 +92,10 @@ bool initGame()
 	spaceShipsTexture.loadFromFileWithPixelPadding
 	(RESOURCES_PATH "spaceShip/stitchedFiles/spaceships.png", 128, true);
 	spaceShipsAtlas = gl2d::TextureAtlasPadding(5, 2, spaceShipsTexture.GetSize().x, spaceShipsTexture.GetSize().y);
+
+	// HealthBar Text
+	healthBar.loadFromFile(RESOURCES_PATH "excessAssets/HealthBar/Bar/noHP.png", true);
+	health.loadFromFile(RESOURCES_PATH "excessAssets/HealthBar/Health/health.png", true);
 
 	// Background
 	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
@@ -329,6 +340,31 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+#pragma region UI
+
+	renderer.pushCamera();
+	{
+
+		glui::Frame f({ 0,0, w, h });
+
+		glui::Box healthBox = glui::Box().xLeftPerc(0.f).yTopPerc(0.9).
+			xDimensionPercentage(0.3).yAspectRatio(1.f / 8.f);
+
+		renderer.renderRectangle(healthBox, healthBar);
+
+		glm::vec4 newRect = healthBox();
+		newRect.z *= data.playerHealth;
+
+		glm::vec4 textCoords = { 0,1,1,0 };
+		textCoords.z *= data.playerHealth;
+
+		renderer.renderRectangle(newRect, health, Colors_White, {}, {},
+			textCoords);
+
+	}
+	renderer.popCamera();
+
+#pragma endregion
 
 	// flush the renderer clean
 	renderer.flush();
@@ -364,6 +400,8 @@ bool gameLogic(float deltaTime)
 	{
 		restartGame();
 	}
+
+	ImGui::SliderFloat("Player Health", &data.playerHealth, 0, 1);
 
 	ImGui::End();
 
