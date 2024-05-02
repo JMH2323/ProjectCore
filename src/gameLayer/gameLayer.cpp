@@ -23,6 +23,7 @@ GameplayData data;
 #pragma region textureLoading
 
 gl2d::Renderer2D renderer;
+constexpr int BACKGROUNDS = 3;
 
 gl2d::Texture playerTexture;
 gl2d::Texture BK_spaceTexture;
@@ -32,7 +33,8 @@ gl2d::Texture BK_planetTexture;
 
 #pragma endregion
 
-TiledRenderer tiledRenderer;
+gl2d::Texture backgroundTexture[BACKGROUNDS];
+TiledRenderer tiledRenderer[BACKGROUNDS];
 
 
 bool initGame()
@@ -42,11 +44,13 @@ bool initGame()
 	renderer.create();
 
 	playerTexture.loadFromFile(RESOURCES_PATH "spaceShip/ships/green.png", true);
-	BK_spaceTexture.loadFromFile(RESOURCES_PATH "background/Space.png", true);
-	BK_starTexture.loadFromFile(RESOURCES_PATH "background/Stars.png", true);
-	BK_planetTexture.loadFromFile(RESOURCES_PATH "background/Planets.png", true);
+	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
+	backgroundTexture[1].loadFromFile(RESOURCES_PATH "background/Stars.png", true);
+	backgroundTexture[2].loadFromFile(RESOURCES_PATH "background/Planets.png", true);
 
-	tiledRenderer.texture = BK_spaceTexture;
+	tiledRenderer[0].texture = backgroundTexture[0];
+	tiledRenderer[1].texture = backgroundTexture[1];
+	tiledRenderer[2].texture = backgroundTexture[2];
 
 	
 	return true;
@@ -120,9 +124,15 @@ bool gameLogic(float deltaTime)
 
 #pragma region renderBackground
 
+
+	// Camera Zoom, test for background
 	renderer.currentCamera.zoom = 0.5;
 
-	tiledRenderer.render(renderer);
+	// loop through backgrounds and render each
+	for (int i = 0; i < BACKGROUNDS; i++)
+	{
+		tiledRenderer[i].render(renderer);
+	}
 
 
 #pragma endregion
