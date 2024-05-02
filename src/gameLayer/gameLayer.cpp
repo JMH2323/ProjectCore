@@ -291,6 +291,11 @@ bool gameLogic(float deltaTime)
 
 	//ImGui::ShowDemoWindow();
 
+	ImGui::Begin("debug");
+
+	ImGui::Text("Bullet count: %d", (int)data.bullets.size());
+
+	ImGui::End();
 
 	return true;
 #pragma endregion
