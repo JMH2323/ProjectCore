@@ -18,6 +18,7 @@
 #include <enemy.h>
 #include <cstdio>
 #include <glui/glui.h>
+#include <raudio.h>
 
 
 struct GameplayData
@@ -33,11 +34,14 @@ struct GameplayData
 	
 	// Player sprite size for determining rendering
 	float shipSize = 250.f;
+
+	// Enemy Spawn
+	float enemySpawnRate = 1.5;
 };
 
 GameplayData data;
 
-#pragma region textureLoading
+#pragma region AssetLoading
 
 gl2d::Renderer2D renderer;
 constexpr int BACKGROUNDS = 3;
@@ -57,6 +61,8 @@ TiledRenderer tiledRenderer[BACKGROUNDS];
 gl2d::Texture healthBar;
 gl2d::Texture health;
 
+
+
 #pragma endregion
 
 
@@ -72,6 +78,31 @@ void restartGame()
 bool bulletCollision(glm::vec2 bulletPos, glm::vec2 shipPos, float shipSize)
 {
 	return glm::distance(bulletPos, shipPos) <= shipSize;
+}
+
+void spawnEnemy()
+{
+	// List of ship sprites. Can expand into enemy classes TODO?
+	glm::uvec2 shipTypes[] = { {0,0}, {0,1}, {2,0}, {3, 1} };
+
+	Enemy e;
+	e.position = data.playerPos;
+
+	glm::vec2 offset(2000, 0);
+	offset = glm::vec2(glm::vec4(offset, 0, 1) * glm::rotate(glm::mat4(1.f), glm::radians((float)(rand() % 360)), glm::vec3(0, 0, 1)));
+
+	e.position += offset;
+
+	e.speed = 800.f + rand() % 1000;
+	e.turnSpeed = 2.2 + (rand() & 1000) / 500.f;
+	e.type = shipTypes[rand() % 4];
+	e.fireRange = 1.5 + (rand() % 1000) / 2000.f;
+	e.fireTimeReset = 0.1 + (rand() % 1000) / 500;
+	e.bulletSpeed = rand() % 3000 + 1000;
+
+	// TODO bullet speed
+
+	data.enemies.push_back(e);
 }
 
 bool initGame()
@@ -274,6 +305,28 @@ bool gameLogic(float deltaTime)
 
 #pragma region handleEnemies
 
+	
+	// Enemy spawn code
+	if (data.enemies.size() < 25)
+	{
+		data.enemySpawnRate -= deltaTime;
+
+		if (data.enemySpawnRate < 0)
+		{
+			data.enemySpawnRate = rand() % 6 + 1;
+
+			spawnEnemy();
+			if (rand() % 3 == 0)
+			{
+				spawnEnemy();
+				spawnEnemy();
+			}
+
+		}
+
+	}
+	
+	// Enemy update code
 	for (int i = 0; i < data.enemies.size(); i++)
 	{
 		// If the enemy is too far away, despawn them
@@ -453,21 +506,7 @@ bool gameLogic(float deltaTime)
 
 	if (ImGui::Button("Spawn enemy"))
 	{
-		// List of ship sprites. Can expand into enemy classes TODO?
-		glm::uvec2 shipTypes[] = { {0,0}, {0,1}, {2,0}, {3, 1} };
-
-		Enemy e;
-		e.position = data.playerPos;
-
-		e.speed = 800.f + rand() % 1000;
-		e.turnSpeed = 2.2 + (rand() & 1000) / 500.f;
-		e.type = shipTypes[rand() % 4];
-		e.fireRange = 1.5 + (rand() % 1000) / 2000.f;
-		e.fireTimeReset = 0.1 + (rand() % 1000) / 500;
-
-		// TODO bullet speed
-
-		data.enemies.push_back(e);
+		spawnEnemy();
 	}
 
 	if (ImGui::Button("Reset game"))

@@ -10,7 +10,7 @@ struct Bullet
 
 	float bulletSpeed = 3000.f;
 	bool isEnemy = false;
-	float bulletSize = 50.f;;
+	float bulletSize = 70.f;
 
 	void render(gl2d::Renderer2D& renderer,
 		gl2d::Texture bulletsTexture, gl2d::TextureAtlasPadding bulletsAtlas);
