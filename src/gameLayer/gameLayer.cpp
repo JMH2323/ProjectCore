@@ -31,6 +31,8 @@ struct GameplayData
 	std::vector<Enemy> enemies;
 
 	float playerHealth = 1.f;
+	float fireRate = 0.2;
+	float fireReset = 0.2;
 	
 	// Player sprite size for determining rendering
 	float shipSize = 250.f;
@@ -71,9 +73,6 @@ Sound shootSound3;
 Sound gameplaySound;
 
 #pragma endregion
-
-
-
 
 void restartGame()
 {
@@ -171,8 +170,6 @@ bool initGame()
 	
 	return true;
 }
-
-
 
 bool gameLogic(float deltaTime)
 {
@@ -286,38 +283,44 @@ bool gameLogic(float deltaTime)
 
 #pragma region handlePlayerBullets
 
+	
 
-	if (platform::isLMousePressed())
+	data.fireRate -= deltaTime;
+	if (data.fireRate < 0) { data.fireRate = 0.f; }
+
+	if (platform::isLMouseHeld() && data.fireRate == 0.f)
 	{
-		Bullet b1;
-		Bullet b2;
 
-		float spriteWidth = 250;
 
-		// Coordinates of the gun barrel's exit point, relative to the player's center (a quarter from center)
-		glm::vec2 gunOffset = glm::vec2(0, spriteWidth / 4);
+		data.fireRate = data.fireReset;
 
-		// Rotate the offset according to the sprite's rotation
-		float s = sin(spaceShipAngle);
-		float c = cos(spaceShipAngle);
-		glm::vec2 rotatedGunOffset;
-		rotatedGunOffset.x = gunOffset.x * c + gunOffset.y * s;
-		rotatedGunOffset.y = -gunOffset.x * s + gunOffset.y * c;
+			Bullet b1;
+			Bullet b2;
+			// Coordinates of the gun barrel's exit point, relative to the player's center (a quarter from center)
+			glm::vec2 gunOffset = glm::vec2(0, data.shipSize / 4);
 
-		// Create bullets at position, with offset and direction.
-		b1.position = data.playerPos + rotatedGunOffset;
-		b1.bulletSpeed = 3000.f;
-		b1.fireDirection = mouseDirection;
-		// Second bullet has negative offset
-		b2.position = data.playerPos - rotatedGunOffset;
-		b2.bulletSpeed = 3000.f;
-		b2.fireDirection = mouseDirection;
+			// Rotate the offset according to the sprite's rotation
+			float s = sin(spaceShipAngle);
+			float c = cos(spaceShipAngle);
+			glm::vec2 rotatedGunOffset;
+			rotatedGunOffset.x = gunOffset.x * c + gunOffset.y * s;
+			rotatedGunOffset.y = -gunOffset.x * s + gunOffset.y * c;
 
-		data.bullets.push_back(b1);
-		data.bullets.push_back(b2);
+			// Create bullets at position, with offset and direction.
+			b1.position = data.playerPos + rotatedGunOffset;
+			b1.bulletSpeed = 3000.f;
+			b1.fireDirection = mouseDirection;
+			// Second bullet has negative offset
+			b2.position = data.playerPos - rotatedGunOffset;
+			b2.bulletSpeed = 3000.f;
+			b2.fireDirection = mouseDirection;
 
-		if (rand() % 2 == 0) PlaySound(shootSound1);
-		else PlaySound(shootSound2);
+			data.bullets.push_back(b1);
+			data.bullets.push_back(b2);
+
+			if (rand() % 2 == 0) PlaySound(shootSound1);
+			else PlaySound(shootSound2);
+		
 
 	}
 
@@ -368,7 +371,7 @@ bool gameLogic(float deltaTime)
 			//todo speed
 			data.bullets.push_back(b);
 
-			PlaySound(shootSound3);
+			if (!IsSoundPlaying(shootSound3)) PlaySound(shootSound3);
 		}
 	}
 
@@ -537,6 +540,7 @@ bool gameLogic(float deltaTime)
 	{
 		restartGame();
 	}
+
 
 	ImGui::SliderInt("Spawn Rate (Lower means faster)", &data.enemySpawnMod, 1, 10);
 
