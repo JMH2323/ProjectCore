@@ -779,7 +779,7 @@ namespace glui
 							hovered = true;
 							if (input.mouseHeld)
 							{
-								clicked = true;
+								clicked = false;
 								textTransform.y += transformDrawn.w * pressDownSize;
 								toggleTransform.y += transformDrawn.w * pressDownSize;
 							}

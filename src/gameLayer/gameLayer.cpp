@@ -67,6 +67,12 @@ TiledRenderer tiledRenderer[BACKGROUNDS];
 gl2d::Texture healthBar;
 gl2d::Texture health;
 
+gl2d::Texture button;
+
+gl2d::Font font;
+
+glui::RendererUi uiRenderer;
+
 Sound shootSound1;
 Sound shootSound2;
 Sound shootSound3;
@@ -74,13 +80,16 @@ Sound gameplaySound;
 
 #pragma endregion
 
+// Not a good long term solution. TODO
+bool gameIsRunning = 0;
+
 void restartGame()
 {
 	data = {};
 	renderer.currentCamera.follow(data.playerPos
 		, 550, 0, 0, renderer.windowW, renderer.windowH);
 
-	PlaySound(gameplaySound);
+	if (gameIsRunning) { PlaySound(gameplaySound); }
 }
 
 bool bulletCollision(glm::vec2 bulletPos, glm::vec2 shipPos, float shipSize)
@@ -142,11 +151,12 @@ bool initGame()
 	healthBar.loadFromFile(RESOURCES_PATH "excessAssets/HealthBar/Bar/noHP.png", true);
 	health.loadFromFile(RESOURCES_PATH "excessAssets/HealthBar/Health/health.png", true);
 
-	// Background
+	// Background 1
 	backgroundTexture[0].loadFromFile(RESOURCES_PATH "background/Space.png", true);
 	backgroundTexture[1].loadFromFile(RESOURCES_PATH "background/Stars.png", true);
 	backgroundTexture[2].loadFromFile(RESOURCES_PATH "background/Planets.png", true);
 
+	// Sounds
 	shootSound1 = LoadSound(RESOURCES_PATH "arcade_shot1.wav");
 	SetSoundVolume(shootSound1, 0.8);
 	shootSound2 = LoadSound(RESOURCES_PATH "arcade_shot2.wav");
@@ -156,7 +166,12 @@ bool initGame()
 	gameplaySound = LoadSound(RESOURCES_PATH "Battle in the Stars.ogg");
 	SetSoundVolume(gameplaySound, 0.10);
 	
+	//Font
+	font.createFromFile(RESOURCES_PATH "roboto_black.ttf");
+	button.loadFromFile(RESOURCES_PATH "space/Black Hole2.png", true);
 
+
+	// Background 2
 	tiledRenderer[0].texture = backgroundTexture[0];
 	tiledRenderer[1].texture = backgroundTexture[1];
 	tiledRenderer[2].texture = backgroundTexture[2];
@@ -171,19 +186,8 @@ bool initGame()
 	return true;
 }
 
-bool gameLogic(float deltaTime)
+void gameplay(float deltaTime, int w, int h) 
 {
-#pragma region initView
-	int w = 0; int h = 0;
-	w = platform::getFrameBufferSizeX(); //window w
-	h = platform::getFrameBufferSizeY(); //window h
-	
-	glViewport(0, 0, w, h);
-	glClear(GL_COLOR_BUFFER_BIT); //clear screen
-
-	renderer.updateWindowMetrics(w, h);
-#pragma endregion
-
 #pragma region movement
 
 	glm::vec2 move = {};
@@ -258,7 +262,7 @@ bool gameLogic(float deltaTime)
 
 #pragma region mousePos
 
-	
+
 	glm::vec2 mousePos = platform::getRelMousePosition();
 	glm::vec2 screenCenter(w / 2.f, h / 2.f);
 
@@ -283,7 +287,7 @@ bool gameLogic(float deltaTime)
 
 #pragma region handlePlayerBullets
 
-	
+
 
 	data.fireRate -= deltaTime;
 	if (data.fireRate < 0) { data.fireRate = 0.f; }
@@ -294,33 +298,33 @@ bool gameLogic(float deltaTime)
 
 		data.fireRate = data.fireReset;
 
-			Bullet b1;
-			Bullet b2;
-			// Coordinates of the gun barrel's exit point, relative to the player's center (a quarter from center)
-			glm::vec2 gunOffset = glm::vec2(0, data.shipSize / 4);
+		Bullet b1;
+		Bullet b2;
+		// Coordinates of the gun barrel's exit point, relative to the player's center (a quarter from center)
+		glm::vec2 gunOffset = glm::vec2(0, data.shipSize / 4);
 
-			// Rotate the offset according to the sprite's rotation
-			float s = sin(spaceShipAngle);
-			float c = cos(spaceShipAngle);
-			glm::vec2 rotatedGunOffset;
-			rotatedGunOffset.x = gunOffset.x * c + gunOffset.y * s;
-			rotatedGunOffset.y = -gunOffset.x * s + gunOffset.y * c;
+		// Rotate the offset according to the sprite's rotation
+		float s = sin(spaceShipAngle);
+		float c = cos(spaceShipAngle);
+		glm::vec2 rotatedGunOffset;
+		rotatedGunOffset.x = gunOffset.x * c + gunOffset.y * s;
+		rotatedGunOffset.y = -gunOffset.x * s + gunOffset.y * c;
 
-			// Create bullets at position, with offset and direction.
-			b1.position = data.playerPos + rotatedGunOffset;
-			b1.bulletSpeed = 3000.f;
-			b1.fireDirection = mouseDirection;
-			// Second bullet has negative offset
-			b2.position = data.playerPos - rotatedGunOffset;
-			b2.bulletSpeed = 3000.f;
-			b2.fireDirection = mouseDirection;
+		// Create bullets at position, with offset and direction.
+		b1.position = data.playerPos + rotatedGunOffset;
+		b1.bulletSpeed = 3000.f;
+		b1.fireDirection = mouseDirection;
+		// Second bullet has negative offset
+		b2.position = data.playerPos - rotatedGunOffset;
+		b2.bulletSpeed = 3000.f;
+		b2.fireDirection = mouseDirection;
 
-			data.bullets.push_back(b1);
-			data.bullets.push_back(b2);
+		data.bullets.push_back(b1);
+		data.bullets.push_back(b2);
 
-			if (rand() % 2 == 0) PlaySound(shootSound1);
-			else PlaySound(shootSound2);
-		
+		if (rand() % 2 == 0) PlaySound(shootSound1);
+		else PlaySound(shootSound2);
+
 
 	}
 
@@ -328,7 +332,7 @@ bool gameLogic(float deltaTime)
 
 #pragma region handleEnemies
 
-	
+
 	// Enemy spawn code
 	if (data.enemies.size() < 25)
 	{
@@ -348,7 +352,7 @@ bool gameLogic(float deltaTime)
 		}
 
 	}
-	
+
 	// Enemy update code
 	for (int i = 0; i < data.enemies.size(); i++)
 	{
@@ -394,7 +398,7 @@ bool gameLogic(float deltaTime)
 		// If it is the player's bullet
 		if (!data.bullets[i].isEnemy)
 		{
-			
+
 			bool breakBothLoops = false;
 			for (int e = 0; e < data.enemies.size(); e++)
 			{
@@ -427,16 +431,16 @@ bool gameLogic(float deltaTime)
 		}
 
 		// If it is an enemy bullet
-		else 
+		else
 		{
 			// Check for collision with player. If hits, deal damage.
 			if (bulletCollision(data.bullets[i].position, data.playerPos, data.shipSize))
 			{
-				
+
 				data.playerHealth -= 0.1;
 
 				// Consume bullet
-				
+
 				data.bullets.erase(data.bullets.begin() + i);
 				i--;
 				continue;
@@ -450,7 +454,8 @@ bool gameLogic(float deltaTime)
 	// Check player health
 	if (data.playerHealth <= 0)
 	{
-		restartGame();
+		// Send player back to menu
+		gameIsRunning = false;
 	}
 	else
 	{
@@ -459,7 +464,7 @@ bool gameLogic(float deltaTime)
 		data.playerHealth = glm::clamp(data.playerHealth, 0.f, 1.f);
 	}
 
-	
+
 
 #pragma endregion
 
@@ -473,9 +478,9 @@ bool gameLogic(float deltaTime)
 #pragma endregion
 
 #pragma region renderShips
-	
-	
-	
+
+
+
 
 
 	// Render Player 
@@ -520,6 +525,65 @@ bool gameLogic(float deltaTime)
 
 #pragma endregion
 
+}
+
+bool gameLogic(float deltaTime)
+{
+#pragma region initView
+	int w = 0; int h = 0;
+	w = platform::getFrameBufferSizeX(); //window w
+	h = platform::getFrameBufferSizeY(); //window h
+	
+	glViewport(0, 0, w, h);
+	glClear(GL_COLOR_BUFFER_BIT); //clear screen
+
+	renderer.updateWindowMetrics(w, h);
+#pragma endregion
+
+	if (gameIsRunning)
+	{
+		gameplay(deltaTime, w, h);
+
+	}
+	else
+	{
+		StopSound(gameplaySound);
+
+		uiRenderer.Begin(1);
+
+		renderer.currentCamera.zoom = 0.3;
+		tiledRenderer[0].render(renderer);
+
+		if (uiRenderer.Button("Play", Colors_White, button))
+		{
+			gameIsRunning = true;
+			restartGame();
+		}
+
+		uiRenderer.BeginMenu("Settings (WIP)", Colors_White, button);
+
+
+		static float sound = 0;
+		uiRenderer.sliderFloat("Example Slider: Sound", &sound, 0, 100);
+
+		/*static bool toggle = 1;
+		uiRenderer.newColum(1);
+		uiRenderer.Toggle("##noName", Colors_White, &toggle, button);*/
+
+
+		uiRenderer.EndMenu();
+
+		uiRenderer.End();
+
+		uiRenderer.renderFrame(renderer, font, platform::getRelMousePosition(),
+			platform::isLMousePressed,platform::isLMouseHeld, platform::isLMouseReleased(),
+			platform::isButtonReleased(platform::Button::Escape), platform::getTypedInput(), deltaTime);
+
+		
+
+	}
+
+	
 	// flush the renderer clean
 	renderer.flush();
 
